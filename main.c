@@ -1,6 +1,7 @@
 #include <SDL2/SDL.h>
 #include <stdbool.h>
 #include <stdio.h>
+#include <time.h>
 
 #define SCREEN_SIZE 800
 #define N_SQUARES 10
@@ -68,8 +69,13 @@ int main() {
     back_board[4 + N_SQUARES] = 1;
     back_board[5 + N_SQUARES] = 1;
 
+    clock_t start = clock();
+    clock_t stop = clock();
+
     bool quit = false;
     while (!quit) {
+
+        double duration =  (double) (stop - start) / CLOCKS_PER_SEC;
 
         SDL_Event event;
         while(SDL_PollEvent(&event)) {
@@ -97,43 +103,48 @@ int main() {
             }
         }
 
-        for(int i = 0; i < N_SQUARES * N_SQUARES; i++) {
-            
-            int live_neighbours = 0;
+        if (duration > 0.5) {
+            for(int i = 0; i < N_SQUARES * N_SQUARES; i++) {
+                
+                int live_neighbours = 0;
 
-            //Your row
-            live_neighbours += back_board[i - 1];
-            live_neighbours += back_board[i + 1];
+                //No Wrapping
+                //Your row
+                live_neighbours += back_board[i - 1];
+                live_neighbours += back_board[i + 1];
 
-            //Upper row
-            live_neighbours += back_board[ (i - 1) - N_SQUARES];
-            live_neighbours += back_board[ (i + 1) - N_SQUARES];
-            live_neighbours += back_board[ i - N_SQUARES];
+                //Upper row
+                live_neighbours += back_board[ (i - 1) - N_SQUARES];
+                live_neighbours += back_board[ (i + 1) - N_SQUARES];
+                live_neighbours += back_board[ i - N_SQUARES];
 
-            //Lower row
-            live_neighbours += back_board[ (i -1) + N_SQUARES];
-            live_neighbours += back_board[ (i + 1) + N_SQUARES];
-            live_neighbours += back_board[ i + N_SQUARES];
+                //Lower row
+                live_neighbours += back_board[ (i -1) + N_SQUARES];
+                live_neighbours += back_board[ (i + 1) + N_SQUARES];
+                live_neighbours += back_board[ i + N_SQUARES];
 
-            if(back_board[i]) {
-                front_board[i] = (int) (live_neighbours == 2 || live_neighbours == 3);
-            } else {
-                front_board[i] = (int) (live_neighbours == 3);
+                if(back_board[i]) {
+                    front_board[i] = (int) (live_neighbours == 2 || live_neighbours == 3);
+                } else {
+                    front_board[i] = (int) (live_neighbours == 3);
+                }
             }
+
+
+            for(int i = 0; i < N_SQUARES * N_SQUARES; i++) {
+                SDL_SetRenderDrawColor(renderer, 0xFF * front_board[i], 0, 0, 0);
+                SDL_RenderFillRect(renderer, &squares[i]);
+            }
+
+            SDL_SetRenderDrawColor(renderer, 0xFF, 0xFF, 0xFF, 0xFF);
+            SDL_RenderDrawRects(renderer, &squares[0], N_SQUARES * N_SQUARES);
+
+            SDL_RenderPresent(renderer);
+
+            memcpy(&back_board[0], &front_board[0], sizeof(int) * N_SQUARES * N_SQUARES);
+            start = clock();
         }
-
-
-        for(int i = 0; i < N_SQUARES * N_SQUARES; i++) {
-            SDL_SetRenderDrawColor(renderer, 0xFF * front_board[i], 0, 0, 0);
-            SDL_RenderFillRect(renderer, &squares[i]);
-        }
-
-        SDL_SetRenderDrawColor(renderer, 0xFF, 0xFF, 0xFF, 0xFF);
-        SDL_RenderDrawRects(renderer, &squares[0], N_SQUARES * N_SQUARES);
-
-        SDL_RenderPresent(renderer);
-
-        memcpy(&back_board[0], &front_board[0], sizeof(int) * N_SQUARES * N_SQUARES);
+        stop = clock();
     }
 
     SDL_DestroyWindow(window);
