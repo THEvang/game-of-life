@@ -73,6 +73,7 @@ int main() {
     clock_t stop = clock();
 
     bool quit = false;
+    bool paused = false;
     while (!quit) {
 
         double duration =  (double) (stop - start) / CLOCKS_PER_SEC;
@@ -89,22 +90,29 @@ int main() {
                             if(event.button.button == SDL_BUTTON_LEFT) {
                                 printf("%d, %d\n", event.button.x, event.button.y);
                                 SquareIndex index = to_square_index(event.button.x, event.button.y);
-                                back_board[index.x + index.y * N_SQUARES] = 1;
+                                front_board[index.x + index.y * N_SQUARES] = 1;
                                 printf("%d, %d\n", index.x, index.y);
                             }
 
                             if(event.button.button == SDL_BUTTON_RIGHT) {
                                 SquareIndex index = to_square_index(event.button.x, event.button.y);
-                                back_board[index.x + index.y * N_SQUARES] = 0;
+                                front_board[index.x + index.y * N_SQUARES] = 0;
                             }
                             break;
                     }
                     break;
+                case SDL_KEYDOWN:
+                    switch (event.key.keysym.sym) {
+                        case SDLK_SPACE:
+                            paused = !paused;
+                    }
+                break;
             }
         }
 
         if (duration > 0.5) {
-            for(int i = 0; i < N_SQUARES * N_SQUARES; i++) {
+
+            for(int i = 0; i < N_SQUARES * N_SQUARES && !paused; i++) {
                 
                 int live_neighbours = 0;
 
