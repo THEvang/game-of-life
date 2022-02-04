@@ -12,6 +12,8 @@ typedef struct SquareIndex {
     int y;
 } SquareIndex;
 
+void tick_board(int *new_board, int *old_board);
+
 SquareIndex to_square_index(int x, int y) {
 
     SquareIndex index = (SquareIndex) {
@@ -62,12 +64,13 @@ int main() {
 
     int back_board[N_SQUARES * N_SQUARES];
     int front_board[N_SQUARES * N_SQUARES];
+
     memset(&back_board[0], 0, sizeof(int)*N_SQUARES * N_SQUARES);
     memset(&front_board[0], 0, sizeof(int)*N_SQUARES * N_SQUARES);
 
-    back_board[3 + N_SQUARES] = 1;
-    back_board[4 + N_SQUARES] = 1;
-    back_board[5 + N_SQUARES] = 1;
+    back_board[1 + N_SQUARES] = 1;
+    back_board[1 + 2*N_SQUARES] = 1;
+    back_board[1 + 3*N_SQUARES] = 1;
 
     clock_t start = clock();
     clock_t stop = clock();
@@ -90,12 +93,15 @@ int main() {
                             if(event.button.button == SDL_BUTTON_LEFT) {
                                 printf("%d, %d\n", event.button.x, event.button.y);
                                 SquareIndex index = to_square_index(event.button.x, event.button.y);
+                                back_board[index.x + index.y * N_SQUARES] = 1;
                                 front_board[index.x + index.y * N_SQUARES] = 1;
+
                                 printf("%d, %d\n", index.x, index.y);
                             }
 
                             if(event.button.button == SDL_BUTTON_RIGHT) {
                                 SquareIndex index = to_square_index(event.button.x, event.button.y);
+                                back_board[index.x + index.y * N_SQUARES] = 0;
                                 front_board[index.x + index.y * N_SQUARES] = 0;
                             }
                             break;
@@ -110,48 +116,21 @@ int main() {
             }
         }
 
-        if (duration > 0.5) {
-
-            for(int i = 0; i < N_SQUARES * N_SQUARES && !paused; i++) {
-                
-                int live_neighbours = 0;
-
-                //No Wrapping
-                //Your row
-                live_neighbours += back_board[i - 1];
-                live_neighbours += back_board[i + 1];
-
-                //Upper row
-                live_neighbours += back_board[ (i - 1) - N_SQUARES];
-                live_neighbours += back_board[ (i + 1) - N_SQUARES];
-                live_neighbours += back_board[ i - N_SQUARES];
-
-                //Lower row
-                live_neighbours += back_board[ (i -1) + N_SQUARES];
-                live_neighbours += back_board[ (i + 1) + N_SQUARES];
-                live_neighbours += back_board[ i + N_SQUARES];
-
-                if(back_board[i]) {
-                    front_board[i] = (int) (live_neighbours == 2 || live_neighbours == 3);
-                } else {
-                    front_board[i] = (int) (live_neighbours == 3);
-                }
-            }
-
-
-            for(int i = 0; i < N_SQUARES * N_SQUARES; i++) {
-                SDL_SetRenderDrawColor(renderer, 0xFF * front_board[i], 0, 0, 0);
-                SDL_RenderFillRect(renderer, &squares[i]);
-            }
-
-            SDL_SetRenderDrawColor(renderer, 0xFF, 0xFF, 0xFF, 0xFF);
-            SDL_RenderDrawRects(renderer, &squares[0], N_SQUARES * N_SQUARES);
-
-            SDL_RenderPresent(renderer);
-
-            memcpy(&back_board[0], &front_board[0], sizeof(int) * N_SQUARES * N_SQUARES);
+        if (duration > 0.5 && !paused) {
+            tick_board(&front_board[0], &back_board[0]);
             start = clock();
         }
+
+        for(int i = 0; i < N_SQUARES * N_SQUARES; i++) {
+            SDL_SetRenderDrawColor(renderer, 0xFF * front_board[i], 0, 0, 0);
+            SDL_RenderFillRect(renderer, &squares[i]);
+        }
+
+        SDL_SetRenderDrawColor(renderer, 0xFF, 0xFF, 0xFF, 0xFF);
+        SDL_RenderDrawRects(renderer, &squares[0], N_SQUARES * N_SQUARES);
+
+        SDL_RenderPresent(renderer);
+
         stop = clock();
     }
 
@@ -159,4 +138,41 @@ int main() {
     SDL_Quit();
 
     return 0;
+}
+
+void tick_board(int *new_board, int *old_board) {
+       
+    for(int i = 0; i < N_SQUARES * N_SQUARES; i++) {
+        
+        int live_neighbours = 0;
+
+        int row = i / N_SQUARES;
+
+        int* previous_row = &old_board[((row + N_SQUARES - 1) % N_SQUARES) * N_SQUARES];
+        int* current_row = &old_board[row * N_SQUARES];
+        int* next_row = &old_board[((row + 1) % N_SQUARES)* N_SQUARES];
+        
+        //Your row
+        live_neighbours += current_row[(i + N_SQUARES - 1)  % N_SQUARES];
+        live_neighbours += current_row[(i + 1) % N_SQUARES];
+
+        //Upper row
+        live_neighbours += next_row[(i + N_SQUARES - 1) % N_SQUARES];
+        live_neighbours += next_row[i % N_SQUARES];
+        live_neighbours += next_row[(i + 1) % N_SQUARES];
+
+        //Lower row
+        live_neighbours += previous_row[(i - 1 + N_SQUARES) % N_SQUARES];
+        live_neighbours += previous_row[i % N_SQUARES];
+        live_neighbours += previous_row[(i + 1) % N_SQUARES];
+
+        if(old_board[i]) {
+            new_board[i] = (int) (live_neighbours == 2 || live_neighbours == 3);
+        } else {
+            new_board[i] = (int) (live_neighbours == 3);
+        }
+
+    }
+
+    memcpy(&old_board[0], &new_board[0], sizeof(int) * N_SQUARES * N_SQUARES);
 }
