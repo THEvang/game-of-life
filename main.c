@@ -2,6 +2,7 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <time.h>
+#include <unistd.h>
 
 #define SCREEN_SIZE 800
 #define N_SQUARES 50
@@ -25,7 +26,25 @@ SquareIndex to_square_index(int x, int y) {
     return index;
 }
 
-int main() {
+void usage() {
+    printf("USAGE: game-of-life\n");
+    printf("Conway's game of life\n");
+}
+
+int main(int argc, char* argv[]) {
+
+    char* options = "h";
+    int option;
+    while((option = getopt(argc, argv, options)) != -1) {
+        switch(option) {
+        case 'h':
+            usage();
+            return 0;
+        case '?':
+            printf("Unknown option: %c\n", option);
+            return 1;
+        }
+    }
 
     if (SDL_Init(SDL_INIT_VIDEO ) != 0) {
         SDL_Log("Unable to initialize SDL: %s", SDL_GetError());
