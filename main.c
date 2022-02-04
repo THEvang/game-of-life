@@ -13,8 +13,43 @@ typedef struct SquareIndex {
     int y;
 } SquareIndex;
 
+typedef struct Renderer {
+    SDL_Window* window;
+    SDL_Renderer* renderer;
+} Renderer;
+
+Renderer* init_renderer() {
+
+    if (SDL_Init(SDL_INIT_VIDEO ) != 0) {
+        SDL_Log("Unable to initialize SDL: %s", SDL_GetError());
+        return NULL;
+    }
+
+    SDL_Window* window = SDL_CreateWindow("Game of Life",
+    SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
+    SCREEN_SIZE, SCREEN_SIZE,
+    0);
+    
+    if (!window) {
+        SDL_Log("Unable to create SDL Window: %s", SDL_GetError());
+        return NULL;
+    }
+
+    SDL_Renderer* renderer = SDL_CreateRenderer(window, -1, 0);
+    if (!renderer) {
+        SDL_Log("Unable to create SDL Renderer: %s", SDL_GetError());
+        return NULL;
+    }
+
+    Renderer* r = malloc(sizeof(Renderer));
+    r->renderer = renderer;
+    r->window = window;
+
+    return r;
+}
+
 void tick_board(int *new_board, int *old_board);
-void render_board(int* board, SDL_Renderer* renderer, SDL_Rect* squares);
+void render_board(int* board, Renderer* renderer, SDL_Rect* squares);
 
 SquareIndex to_square_index(int x, int y) {
 
@@ -46,26 +81,12 @@ int main(int argc, char* argv[]) {
         }
     }
 
-    if (SDL_Init(SDL_INIT_VIDEO ) != 0) {
-        SDL_Log("Unable to initialize SDL: %s", SDL_GetError());
-        return 1;
-    }
-
-    SDL_Window* window = SDL_CreateWindow("Game of Life",
-    SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
-    SCREEN_SIZE, SCREEN_SIZE,
-    0);
-    
-    if (!window) {
-        SDL_Log("Unable to create SDL Window: %s", SDL_GetError());
-        return 1;
-    }
-
-    SDL_Renderer* renderer = SDL_CreateRenderer(window, -1, 0);
+    Renderer* renderer = init_renderer();
     if (!renderer) {
-        SDL_Log("Unable to create SDL Renderer: %s", SDL_GetError());
+        printf("Unable to start renderer\n");
         return 1;
-    }
+    } 
+
 
     SDL_Rect squares[N_SQUARES * N_SQUARES];
     for (int i = 0; i < N_SQUARES; i++) {
@@ -146,8 +167,10 @@ int main(int argc, char* argv[]) {
         stop = clock();
     }
 
-    SDL_DestroyWindow(window);
+    SDL_DestroyWindow(renderer->window);
     SDL_Quit();
+
+    free(renderer);
 
     return 0;
 }
@@ -188,15 +211,15 @@ void tick_board(int *new_board, int *old_board) {
     memcpy(&old_board[0], &new_board[0], sizeof(int) * N_SQUARES * N_SQUARES);
 }
 
-void render_board(int* board, SDL_Renderer* renderer, SDL_Rect* squares) {
+void render_board(int* board, Renderer* r, SDL_Rect* squares) {
 
     for(int i = 0; i < N_SQUARES * N_SQUARES; i++) {
-        SDL_SetRenderDrawColor(renderer, 0xFF * board[i], 0, 0, 0);
-        SDL_RenderFillRect(renderer, &squares[i]);
+        SDL_SetRenderDrawColor(r->renderer, 0xFF * board[i], 0, 0, 0);
+        SDL_RenderFillRect(r->renderer, &squares[i]);
     }
 
-    SDL_SetRenderDrawColor(renderer, 0xFF, 0xFF, 0xFF, 0xFF);
-    SDL_RenderDrawRects(renderer, &squares[0], N_SQUARES * N_SQUARES);
+    SDL_SetRenderDrawColor(r->renderer, 0xFF, 0xFF, 0xFF, 0xFF);
+    SDL_RenderDrawRects(r->renderer, &squares[0], N_SQUARES * N_SQUARES);
 
-    SDL_RenderPresent(renderer);
+    SDL_RenderPresent(r->renderer);
 }
