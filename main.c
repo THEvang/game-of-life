@@ -4,7 +4,7 @@
 #include <time.h>
 
 #define SCREEN_SIZE 800
-#define N_SQUARES 10
+#define N_SQUARES 50
 #define SQUARE_SIZE (SCREEN_SIZE/N_SQUARES)
 
 typedef struct SquareIndex {
@@ -13,6 +13,7 @@ typedef struct SquareIndex {
 } SquareIndex;
 
 void tick_board(int *new_board, int *old_board);
+void render_board(int* board, SDL_Renderer* renderer, SDL_Rect* squares);
 
 SquareIndex to_square_index(int x, int y) {
 
@@ -121,15 +122,7 @@ int main() {
             start = clock();
         }
 
-        for(int i = 0; i < N_SQUARES * N_SQUARES; i++) {
-            SDL_SetRenderDrawColor(renderer, 0xFF * front_board[i], 0, 0, 0);
-            SDL_RenderFillRect(renderer, &squares[i]);
-        }
-
-        SDL_SetRenderDrawColor(renderer, 0xFF, 0xFF, 0xFF, 0xFF);
-        SDL_RenderDrawRects(renderer, &squares[0], N_SQUARES * N_SQUARES);
-
-        SDL_RenderPresent(renderer);
+        render_board(&front_board[0], renderer, &squares[0]);
 
         stop = clock();
     }
@@ -171,8 +164,20 @@ void tick_board(int *new_board, int *old_board) {
         } else {
             new_board[i] = (int) (live_neighbours == 3);
         }
-
     }
 
     memcpy(&old_board[0], &new_board[0], sizeof(int) * N_SQUARES * N_SQUARES);
+}
+
+void render_board(int* board, SDL_Renderer* renderer, SDL_Rect* squares) {
+
+    for(int i = 0; i < N_SQUARES * N_SQUARES; i++) {
+        SDL_SetRenderDrawColor(renderer, 0xFF * board[i], 0, 0, 0);
+        SDL_RenderFillRect(renderer, &squares[i]);
+    }
+
+    SDL_SetRenderDrawColor(renderer, 0xFF, 0xFF, 0xFF, 0xFF);
+    SDL_RenderDrawRects(renderer, &squares[0], N_SQUARES * N_SQUARES);
+
+    SDL_RenderPresent(renderer);
 }
