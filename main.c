@@ -52,7 +52,6 @@ void tick_board(int *new_board, int *old_board);
 void render_board(int* board, Renderer* renderer, SDL_Rect* squares);
 
 SquareIndex to_square_index(int x, int y) {
-
     SquareIndex index = (SquareIndex) {
         .x = x / SQUARE_SIZE,
         .y = y / SQUARE_SIZE
@@ -64,6 +63,17 @@ SquareIndex to_square_index(int x, int y) {
 void usage() {
     printf("USAGE: game-of-life\n");
     printf("Conway's game of life\n");
+}
+
+void serialize_board(int* board, int size, unsigned char* buffer) {
+
+    memcpy(buffer, &size, sizeof(int));
+    memcpy(&buffer[sizeof(int)], &board[0], sizeof(int) * size);
+}
+
+void deserialize_board(int* board, int* size, unsigned char* data) {
+    memcpy(size, data, sizeof(int));
+    memcpy(board, &data[sizeof(int)], sizeof(int) * (*size));
 }
 
 int main(int argc, char* argv[]) {
@@ -87,7 +97,6 @@ int main(int argc, char* argv[]) {
         return 1;
     } 
 
-
     SDL_Rect squares[N_SQUARES * N_SQUARES];
     for (int i = 0; i < N_SQUARES; i++) {
         for (int j = 0; j < N_SQUARES; j++) {
@@ -110,8 +119,8 @@ int main(int argc, char* argv[]) {
     memset(&front_board[0], 0, sizeof(int)*N_SQUARES * N_SQUARES);
 
     back_board[1 + N_SQUARES] = 1;
-    back_board[1 + 2*N_SQUARES] = 1;
-    back_board[1 + 3*N_SQUARES] = 1;
+    back_board[1 + 2 * N_SQUARES] = 1;
+    back_board[1 + 3 * N_SQUARES] = 1;
 
     clock_t start = clock();
     clock_t stop = clock();
@@ -136,7 +145,6 @@ int main(int argc, char* argv[]) {
                                 SquareIndex index = to_square_index(event.button.x, event.button.y);
                                 back_board[index.x + index.y * N_SQUARES] = 1;
                                 front_board[index.x + index.y * N_SQUARES] = 1;
-
                                 printf("%d, %d\n", index.x, index.y);
                             }
 
@@ -152,6 +160,34 @@ int main(int argc, char* argv[]) {
                     switch (event.key.keysym.sym) {
                         case SDLK_SPACE:
                             paused = !paused;
+                            break;
+                        case SDLK_s: {
+                            unsigned char* buffer = malloc(sizeof(int) + sizeof(int) * N_SQUARES * N_SQUARES);
+                            serialize_board(front_board, N_SQUARES * N_SQUARES, buffer);
+                            FILE* f = fopen("board.bd", "w");
+                            if(f == NULL) {
+                                printf("failed to open file for writing\n");
+                            }
+                            fwrite(buffer, 1, sizeof(int) + sizeof(int) * N_SQUARES * N_SQUARES, f);
+                            fclose(f);
+                            free(buffer);
+                        }
+                        break;
+                        case SDLK_l: {
+                            FILE* f = fopen("board.bd", "r");
+                            if (f == NULL) {
+                                printf("failed to open file for reading\n");
+                            }
+                            unsigned char* buffer = malloc(sizeof(int) + sizeof(int) * N_SQUARES * N_SQUARES);
+                            fread(buffer, 1, sizeof(int) + sizeof(int) * N_SQUARES * N_SQUARES, f);
+                            int size;
+                            deserialize_board(&back_board[0], &size, buffer);
+                            deserialize_board(&front_board[0], &size, buffer);
+                            fclose(f);
+                            free(buffer);
+                        }
+                        break;
+                        
                     }
                 break;
             }
