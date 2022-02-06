@@ -49,7 +49,7 @@ Renderer* init_renderer() {
 }
 
 void tick_board(int *new_board, int *old_board);
-void render_board(int* board, Renderer* renderer, SDL_Rect* squares);
+void render_board(int* board, Renderer* renderer, SDL_Rect* squares, bool draw_grid);
 
 SquareIndex to_square_index(int x, int y) {
     SquareIndex index = (SquareIndex) {
@@ -66,7 +66,6 @@ void usage() {
 }
 
 void serialize_board(int* board, int size, unsigned char* buffer) {
-
     memcpy(buffer, &size, sizeof(int));
     memcpy(&buffer[sizeof(int)], &board[0], sizeof(int) * size);
 }
@@ -127,6 +126,7 @@ int main(int argc, char* argv[]) {
 
     bool quit = false;
     bool paused = false;
+    bool draw_grid = true;
     while (!quit) {
 
         double duration =  (double) (stop - start) / CLOCKS_PER_SEC;
@@ -186,6 +186,9 @@ int main(int argc, char* argv[]) {
                             fclose(f);
                             free(buffer);
                         }
+                        case SDLK_n: {
+                            draw_grid = !draw_grid;
+                        }
                         break;
                         
                     }
@@ -198,7 +201,7 @@ int main(int argc, char* argv[]) {
             start = clock();
         }
 
-        render_board(&front_board[0], renderer, &squares[0]);
+        render_board(&front_board[0], renderer, &squares[0], draw_grid);
 
         stop = clock();
     }
@@ -247,15 +250,17 @@ void tick_board(int *new_board, int *old_board) {
     memcpy(&old_board[0], &new_board[0], sizeof(int) * N_SQUARES * N_SQUARES);
 }
 
-void render_board(int* board, Renderer* r, SDL_Rect* squares) {
+void render_board(int* board, Renderer* r, SDL_Rect* squares, bool draw_grid) {
 
     for(int i = 0; i < N_SQUARES * N_SQUARES; i++) {
         SDL_SetRenderDrawColor(r->renderer, 0xFF * board[i], 0, 0, 0);
         SDL_RenderFillRect(r->renderer, &squares[i]);
     }
 
-    SDL_SetRenderDrawColor(r->renderer, 0xFF, 0xFF, 0xFF, 0xFF);
-    SDL_RenderDrawRects(r->renderer, &squares[0], N_SQUARES * N_SQUARES);
+    if(draw_grid) {
+        SDL_SetRenderDrawColor(r->renderer, 0xFF, 0xFF, 0xFF, 0xFF);
+        SDL_RenderDrawRects(r->renderer, &squares[0], N_SQUARES * N_SQUARES);
+    }
 
     SDL_RenderPresent(r->renderer);
 }
