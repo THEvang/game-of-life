@@ -1,5 +1,6 @@
 #include <string.h>
 #include <stdlib.h>
+#include <stdio.h>
 #include "board.h"
 
 Board* gol_init_board(int rows, int columns) {
@@ -20,7 +21,7 @@ void gol_destroy_board(Board* b) {
 void gol_serialize_board(Board* board, unsigned char* buffer) {
     memcpy(buffer, &board->rows, sizeof(int));
     memcpy(&buffer[sizeof(int)], &board->columns, sizeof(int));
-    memcpy(&buffer[sizeof(int)*2], &board->cells, sizeof(int) * board->rows * board->columns);
+    memcpy(&buffer[sizeof(int) * 2], board->cells, sizeof(int) * board->rows * board->columns);
 }
 
 void gol_deserialize_board(Board* board, unsigned char* data) {
@@ -69,4 +70,39 @@ void gol_tick_board(Board *new_board, Board *old_board) {
     }
 
     memcpy(old_board->cells, new_board->cells, sizeof(int) * rows * columns);
+}
+
+void gol_save_to_file(Board* board, const char* filename) {
+
+    FILE* f = fopen(filename, "w");
+    if(f == NULL) {
+        printf("failed to open file for writing\n");
+    }
+
+    unsigned char* buffer = malloc(sizeof(int) * 2 + sizeof(int) * board->rows * board->columns);
+    gol_serialize_board(board, buffer);
+
+    fwrite(buffer, 1, sizeof(int) + sizeof(int) * board->rows * board->columns, f);
+    fclose(f);
+    free(buffer);
+}
+
+void gol_load_from_file(Board* board, const char* filename) {
+
+    FILE* f = fopen(filename, "r");
+    if (f == NULL) {
+        printf("failed to open file for reading\n");
+    }
+    
+    unsigned char* buffer = malloc(sizeof(int) * 2);
+    fread(buffer, 1, sizeof(int) * 2, f);
+
+    buffer = realloc(buffer, sizeof(int) * 2 + sizeof(int) * buffer[0] * buffer[sizeof(int)]);
+
+    fread(&buffer[sizeof(int) * 2], 1, sizeof(int) * buffer[0] * buffer[sizeof(int)], f);
+
+    gol_deserialize_board(board, buffer);
+    
+    fclose(f);
+    free(buffer);
 }

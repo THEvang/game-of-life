@@ -162,29 +162,16 @@ int main(int argc, char* argv[]) {
                             paused = !paused;
                             break;
                         case SDLK_s: {
-                            unsigned char* buffer = malloc(sizeof(int) * 2 + sizeof(int) * rows * columns);
-                            gol_serialize_board(front_board, buffer);
-                            FILE* f = fopen("board.bd", "w");
-                            if(f == NULL) {
-                                printf("failed to open file for writing\n");
-                            }
-                            fwrite(buffer, 1, sizeof(int) + sizeof(int) * rows * columns, f);
-                            fclose(f);
-                            free(buffer);
+                            gol_save_to_file(front_board, "board.bd");
                         }
                         break;
                         case SDLK_l: {
-                            FILE* f = fopen("board.bd", "r");
-                            if (f == NULL) {
-                                printf("failed to open file for reading\n");
-                            }
-                            unsigned char* buffer = malloc(sizeof(int) * 2 + sizeof(int) * rows * columns);
-                            fread(buffer, 1, sizeof(int) * 2 + sizeof(int) * rows * columns, f);
-                            gol_deserialize_board(back_board, buffer);
-                            gol_deserialize_board(front_board, buffer);
-                            fclose(f);
-                            free(buffer);
+                            gol_load_from_file(front_board, "board.bd");
+                            back_board->rows = front_board->rows;
+                            back_board->columns = front_board->columns;
+                            memcpy(back_board->cells, front_board->cells, sizeof(int) * front_board->rows * front_board->columns);
                         }
+                        break;
                         case SDLK_n: {
                             draw_grid = !draw_grid;
                         }
