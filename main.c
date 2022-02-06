@@ -5,9 +5,6 @@
 #include <unistd.h>
 #include "board.h"
 
-#define ROWS 50
-#define COLUMNS 50
-
 typedef struct SquareIndex {
     int x;
     int y;
@@ -49,7 +46,7 @@ Renderer* init_renderer(int width, int height) {
 }
 
 void tick_board(int *new_board, int *old_board);
-void render_board(int* board, Renderer* renderer, SDL_Rect* squares, bool draw_grid);
+void render_board(Board* board, Renderer* renderer, SDL_Rect* squares, bool draw_grid);
 
 SquareIndex to_square_index(int x, int y, int square_size) {
     SquareIndex index = (SquareIndex) {
@@ -61,13 +58,13 @@ SquareIndex to_square_index(int x, int y, int square_size) {
 }
 
 void usage() {
-    printf("USAGE: game-of-life\n");
+    printf("USAGE: game-of-life [OPTION] N M\n");
     printf("Conway's game of life\n");
 }
 
 int main(int argc, char* argv[]) {
 
-    char* options = "h";
+    char* options = "hn:";
     int option;
     while((option = getopt(argc, argv, options)) != -1) {
         switch(option) {
@@ -80,9 +77,22 @@ int main(int argc, char* argv[]) {
         }
     }
 
-    int height = ROWS * 10;
-    int width = COLUMNS * 10;
-    int square_size = height / ROWS; 
+    if (optind == argc) {
+        usage();
+        return 1;
+    }
+
+    int columns = atoi(argv[optind++]);
+    int rows = atoi(argv[optind++]);
+
+    if (columns <= 0 || rows <= 0) {
+        printf("Rows and columns cannot be zero or negative\n");
+        return 1;
+    }
+
+    int height = rows * 10;
+    int width = columns * 10;
+    int square_size = height / rows; 
 
     Renderer* renderer = init_renderer(width, height);
     if (!renderer) {
@@ -90,10 +100,10 @@ int main(int argc, char* argv[]) {
         return 1;
     } 
 
-    SDL_Rect squares[ROWS * COLUMNS];
-    for (int i = 0; i < ROWS; i++) {
-        for (int j = 0; j < COLUMNS; j++) {
-            squares[j + COLUMNS*i] = (SDL_Rect) {
+    SDL_Rect *squares = malloc(sizeof(SDL_Rect) * rows * columns);
+    for (int i = 0; i < rows; i++) {
+        for (int j = 0; j < columns; j++) {
+            squares[j + columns*i] = (SDL_Rect) {
                 .h = square_size,
                 .w = square_size,
                 .x = square_size*j,
@@ -102,15 +112,15 @@ int main(int argc, char* argv[]) {
         }
     }
 
-    int colors[ROWS * COLUMNS];
-    memset(&colors[0], 0, sizeof(int) * ROWS * COLUMNS);
+    int *colors = malloc(sizeof(int) * rows * columns);
+    memset(colors, 0, sizeof(int) * rows * columns);
 
-    Board* back_board = gol_init_board(ROWS, COLUMNS);
-    Board* front_board = gol_init_board(ROWS, COLUMNS);
+    Board* back_board = gol_init_board(rows, columns);
+    Board* front_board = gol_init_board(rows, columns);
 
-    back_board->cells[1 + COLUMNS] = 1;
-    back_board->cells[1 + 2 * COLUMNS] = 1;
-    back_board->cells[1 + 3 * COLUMNS] = 1;
+    back_board->cells[1 + columns] = 1;
+    back_board->cells[1 + 2 * columns] = 1;
+    back_board->cells[1 + 3 * columns] = 1;
 
     clock_t start = clock();
     clock_t stop = clock();
@@ -133,15 +143,15 @@ int main(int argc, char* argv[]) {
                         case SDL_MOUSEBUTTONDOWN:
                             if(event.button.button == SDL_BUTTON_LEFT) {
                                 SquareIndex index = to_square_index(event.button.x, event.button.y, square_size);
-                                back_board->cells[index.x + index.y * COLUMNS] = 1;
-                                front_board->cells[index.x + index.y * COLUMNS] = 1;
+                                back_board->cells[index.x + index.y * columns] = 1;
+                                front_board->cells[index.x + index.y * columns] = 1;
                                 printf("%d, %d\n", index.x, index.y);
                             }
 
                             if(event.button.button == SDL_BUTTON_RIGHT) {
                                 SquareIndex index = to_square_index(event.button.x, event.button.y, square_size);
-                                back_board->cells[index.x + index.y * COLUMNS] = 0;
-                                front_board->cells[index.x + index.y * COLUMNS] = 0;
+                                back_board->cells[index.x + index.y * columns] = 0;
+                                front_board->cells[index.x + index.y * columns] = 0;
                             }
                             break;
                     }
@@ -152,13 +162,13 @@ int main(int argc, char* argv[]) {
                             paused = !paused;
                             break;
                         case SDLK_s: {
-                            unsigned char* buffer = malloc(sizeof(int) * 2 + sizeof(int) * ROWS * COLUMNS);
+                            unsigned char* buffer = malloc(sizeof(int) * 2 + sizeof(int) * rows * columns);
                             gol_serialize_board(front_board, buffer);
                             FILE* f = fopen("board.bd", "w");
                             if(f == NULL) {
                                 printf("failed to open file for writing\n");
                             }
-                            fwrite(buffer, 1, sizeof(int) + sizeof(int) * ROWS * COLUMNS, f);
+                            fwrite(buffer, 1, sizeof(int) + sizeof(int) * rows * columns, f);
                             fclose(f);
                             free(buffer);
                         }
@@ -168,8 +178,8 @@ int main(int argc, char* argv[]) {
                             if (f == NULL) {
                                 printf("failed to open file for reading\n");
                             }
-                            unsigned char* buffer = malloc(sizeof(int) * 2 + sizeof(int) * ROWS * COLUMNS);
-                            fread(buffer, 1, sizeof(int) * 2 + sizeof(int) * ROWS * COLUMNS, f);
+                            unsigned char* buffer = malloc(sizeof(int) * 2 + sizeof(int) * rows * columns);
+                            fread(buffer, 1, sizeof(int) * 2 + sizeof(int) * rows * columns, f);
                             gol_deserialize_board(back_board, buffer);
                             gol_deserialize_board(front_board, buffer);
                             fclose(f);
@@ -190,7 +200,7 @@ int main(int argc, char* argv[]) {
             start = clock();
         }
 
-        render_board(front_board->cells, renderer, &squares[0], draw_grid);
+        render_board(front_board, renderer, &squares[0], draw_grid);
 
         stop = clock();
     }
@@ -205,16 +215,16 @@ int main(int argc, char* argv[]) {
     return 0;
 }
 
-void render_board(int* board, Renderer* r, SDL_Rect* squares, bool draw_grid) {
+void render_board(Board* board, Renderer* r, SDL_Rect* squares, bool draw_grid) {
 
-    for(int i = 0; i < ROWS * COLUMNS; i++) {
-        SDL_SetRenderDrawColor(r->renderer, 0xFF * board[i], 0, 0, 0);
+    for(int i = 0; i < board->rows * board->columns; i++) {
+        SDL_SetRenderDrawColor(r->renderer, 0xFF * board->cells[i], 0, 0, 0);
         SDL_RenderFillRect(r->renderer, &squares[i]);
     }
 
     if(draw_grid) {
         SDL_SetRenderDrawColor(r->renderer, 0xFF, 0xFF, 0xFF, 0xFF);
-        SDL_RenderDrawRects(r->renderer, &squares[0], ROWS * COLUMNS);
+        SDL_RenderDrawRects(r->renderer, &squares[0], board->rows * board->columns);
     }
 
     SDL_RenderPresent(r->renderer);
