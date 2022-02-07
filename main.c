@@ -166,6 +166,14 @@ int main(int argc, char* argv[]) {
                             break;
                     }
                     break;
+                case SDL_MOUSEWHEEL: {
+                    if (event.wheel.y > 0) {
+                        camera.scale++;
+                    } else if (event.wheel.y < 0) {
+                        camera.scale > 1 ? camera.scale-- : camera.scale;
+                    }
+                }
+                break;
                 case SDL_KEYDOWN:
                     switch (event.key.keysym.sym) {
                         case SDLK_SPACE:
@@ -220,6 +228,9 @@ int main(int argc, char* argv[]) {
 }
 
 void render_board(Board* board, Renderer* r, SDL_Rect* squares, bool draw_grid, Camera* c) {
+
+    SDL_SetRenderDrawColor(r->renderer, 100, 100, 100, 0xFF * 0.8);
+    SDL_RenderClear(r->renderer);
 
     SDL_RenderSetScale(r->renderer, c->scale, c->scale);
 
