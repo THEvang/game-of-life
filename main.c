@@ -65,6 +65,12 @@ SquareIndex to_square_index(int x, int y, int square_size, Camera * camera) {
 void usage() {
     printf("USAGE: game-of-life [OPTION] N M\n");
     printf("Conway's game of life\n");
+    printf("\n");
+    printf("\t-h print this help text\n");
+    printf("\t-g draw grid\n");
+    printf("\t-n=STEP_SIZE select steps per second\n");
+    printf("\t-i interactive mode. Step manually by pressing enter\n");
+
 }
 
 int main(int argc, char* argv[]) {
