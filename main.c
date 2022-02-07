@@ -69,9 +69,12 @@ void usage() {
 
 int main(int argc, char* argv[]) {
 
-    char* options = "hn:g";
+    char* options = "hn:gi";
     int option;
     bool draw_grid = false;
+    int step_size = 10;
+    bool interactive = false;
+
     while((option = getopt(argc, argv, options)) != -1) {
         switch(option) {
         case 'h':
@@ -82,6 +85,12 @@ int main(int argc, char* argv[]) {
             return 1;
         case 'g':
             draw_grid = true;
+            break;
+        case 'n':
+            step_size = atof(optarg);
+            break;
+        case 'i':
+            interactive = true;
             break;
         }
     }
@@ -134,6 +143,8 @@ int main(int argc, char* argv[]) {
     Camera camera = {
         .scale = 1
     };
+
+    double tick_duration = 1.0F / step_size;
     while (!quit) {
 
         double duration =  (double) (stop - start) / CLOCKS_PER_SEC;
@@ -149,16 +160,20 @@ int main(int argc, char* argv[]) {
                         case SDL_MOUSEBUTTONDOWN:
                             if(event.button.button == SDL_BUTTON_LEFT) {
                                 SquareIndex index = to_square_index(event.button.x, event.button.y, square_size, &camera);
-                                back_board->cells[index.x + index.y * columns] = 1;
-                                front_board->cells[index.x + index.y * columns] = 1;
+                                if (index.x < back_board->columns && index.y < back_board->rows) {
+                                    back_board->cells[index.x + index.y * columns] = 1;
+                                    front_board->cells[index.x + index.y * columns] = 1;
+                                }
                                 printf("%d, %d\n", index.x, index.y);
                                 printf("%d, %d\n", event.button.x, event.button.y);
                             }
 
                             if(event.button.button == SDL_BUTTON_RIGHT) {
                                 SquareIndex index = to_square_index(event.button.x, event.button.y, square_size, &camera);
-                                back_board->cells[index.x + index.y * columns] = 0;
-                                front_board->cells[index.x + index.y * columns] = 0;
+                                if (index.x < back_board->columns && index.y < back_board->rows) {
+                                    back_board->cells[index.x + index.y * columns] = 0;
+                                    front_board->cells[index.x + index.y * columns] = 0;
+                                }
                             }
                             break;
                     }
@@ -195,12 +210,20 @@ int main(int argc, char* argv[]) {
                             camera.scale = 1;
                         }
                         break;
+                        case SDLK_RETURN:
+                            if (interactive) {
+                                gol_tick_board(front_board, back_board);
+                            }
+                        break;
+                        case SDLK_i:
+                            interactive = !interactive;
+                        break;
                     }
                 break;
             }
         }
 
-        if (duration > 0.5 && !paused) {
+        if (duration > tick_duration && !paused && !interactive) {
             gol_tick_board(front_board, back_board);
             start = clock();
         }
@@ -233,7 +256,7 @@ void render_board(Board* board, Renderer* r, SDL_Rect* squares, bool draw_grid, 
     }
 
     if(draw_grid) {
-        SDL_SetRenderDrawColor(r->renderer, 0xFF, 0xFF, 0xFF, 0xFF);
+        SDL_SetRenderDrawColor(r->renderer, 0xC0, 0xC0, 0xC0, 0);
         SDL_RenderDrawRects(r->renderer, &squares[0], board->rows * board->columns);
     }
 
