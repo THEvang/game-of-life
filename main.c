@@ -5,8 +5,8 @@
 #include <unistd.h>
 #include "board.h"
 
-#define WINDOW_HEIGHT 800
-#define WINDOW_WIDTH 600
+#define WINDOW_WIDTH 1080
+#define WINDOW_HEIGHT 720
 
 typedef struct SquareIndex {
     int x;
@@ -52,7 +52,6 @@ Renderer* init_renderer(int width, int height) {
     return r;
 }
 
-void tick_board(int *new_board, int *old_board);
 void render_board(Board* board, Renderer* renderer, SDL_Rect* squares, bool draw_grid, Camera* camera);
 
 SquareIndex to_square_index(int x, int y, int square_size, Camera * camera) {
@@ -120,9 +119,6 @@ int main(int argc, char* argv[]) {
         }
     }
 
-    int *colors = malloc(sizeof(int) * rows * columns);
-    memset(colors, 0, sizeof(int) * rows * columns);
-
     Board* back_board = gol_init_board(rows, columns);
     Board* front_board = gol_init_board(rows, columns);
 
@@ -156,6 +152,7 @@ int main(int argc, char* argv[]) {
                                 back_board->cells[index.x + index.y * columns] = 1;
                                 front_board->cells[index.x + index.y * columns] = 1;
                                 printf("%d, %d\n", index.x, index.y);
+                                printf("%d, %d\n", event.button.x, event.button.y);
                             }
 
                             if(event.button.button == SDL_BUTTON_RIGHT) {
@@ -194,12 +191,8 @@ int main(int argc, char* argv[]) {
                             draw_grid = !draw_grid;
                         }
                         break;
-                        case SDLK_u: {
-                            camera.scale++;
-                        }
-                        break;
-                        case SDLK_i: {
-                            camera.scale > 1 ? camera.scale-- : camera.scale;
+                        case SDLK_r: {
+                            camera.scale = 1;
                         }
                         break;
                     }
