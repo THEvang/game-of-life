@@ -5,6 +5,9 @@
 #include <unistd.h>
 #include "board.h"
 
+#define WINDOW_HEIGHT 800
+#define WINDOW_WIDTH 600
+
 typedef struct SquareIndex {
     int x;
     int y;
@@ -14,6 +17,10 @@ typedef struct Renderer {
     SDL_Window* window;
     SDL_Renderer* renderer;
 } Renderer;
+
+typedef struct Camera {
+    int scale;
+} Camera;
 
 Renderer* init_renderer(int width, int height) {
 
@@ -46,14 +53,13 @@ Renderer* init_renderer(int width, int height) {
 }
 
 void tick_board(int *new_board, int *old_board);
-void render_board(Board* board, Renderer* renderer, SDL_Rect* squares, bool draw_grid);
+void render_board(Board* board, Renderer* renderer, SDL_Rect* squares, bool draw_grid, Camera* camera);
 
-SquareIndex to_square_index(int x, int y, int square_size) {
+SquareIndex to_square_index(int x, int y, int square_size, Camera * camera) {
     SquareIndex index = (SquareIndex) {
-        .x = x / square_size,
-        .y = y / square_size
+        .x = x / (square_size * camera->scale),
+        .y = y / (square_size * camera->scale)
     };
-
     return index;
 }
 
@@ -94,15 +100,13 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    int height = rows * 10;
-    int width = columns * 10;
-    int square_size = height / rows; 
+    int square_size = 10; 
 
-    Renderer* renderer = init_renderer(width, height);
+    Renderer* renderer = init_renderer(WINDOW_WIDTH, WINDOW_HEIGHT);
     if (!renderer) {
         printf("Unable to start renderer\n");
         return 1;
-    } 
+    }
 
     SDL_Rect *squares = malloc(sizeof(SDL_Rect) * rows * columns);
     for (int i = 0; i < rows; i++) {
@@ -131,6 +135,9 @@ int main(int argc, char* argv[]) {
 
     bool quit = false;
     bool paused = false;
+    Camera camera = {
+        .scale = 1
+    };
     while (!quit) {
 
         double duration =  (double) (stop - start) / CLOCKS_PER_SEC;
@@ -145,14 +152,14 @@ int main(int argc, char* argv[]) {
                     switch (event.button.type) {
                         case SDL_MOUSEBUTTONDOWN:
                             if(event.button.button == SDL_BUTTON_LEFT) {
-                                SquareIndex index = to_square_index(event.button.x, event.button.y, square_size);
+                                SquareIndex index = to_square_index(event.button.x, event.button.y, square_size, &camera);
                                 back_board->cells[index.x + index.y * columns] = 1;
                                 front_board->cells[index.x + index.y * columns] = 1;
                                 printf("%d, %d\n", index.x, index.y);
                             }
 
                             if(event.button.button == SDL_BUTTON_RIGHT) {
-                                SquareIndex index = to_square_index(event.button.x, event.button.y, square_size);
+                                SquareIndex index = to_square_index(event.button.x, event.button.y, square_size, &camera);
                                 back_board->cells[index.x + index.y * columns] = 0;
                                 front_board->cells[index.x + index.y * columns] = 0;
                             }
@@ -179,7 +186,14 @@ int main(int argc, char* argv[]) {
                             draw_grid = !draw_grid;
                         }
                         break;
-                        
+                        case SDLK_u: {
+                            camera.scale++;
+                        }
+                        break;
+                        case SDLK_i: {
+                            camera.scale > 1 ? camera.scale-- : camera.scale;
+                        }
+                        break;
                     }
                 break;
             }
@@ -190,7 +204,7 @@ int main(int argc, char* argv[]) {
             start = clock();
         }
 
-        render_board(front_board, renderer, &squares[0], draw_grid);
+        render_board(front_board, renderer, &squares[0], draw_grid, &camera);
 
         stop = clock();
     }
@@ -205,7 +219,9 @@ int main(int argc, char* argv[]) {
     return 0;
 }
 
-void render_board(Board* board, Renderer* r, SDL_Rect* squares, bool draw_grid) {
+void render_board(Board* board, Renderer* r, SDL_Rect* squares, bool draw_grid, Camera* c) {
+
+    SDL_RenderSetScale(r->renderer, c->scale, c->scale);
 
     for(int i = 0; i < board->rows * board->columns; i++) {
         SDL_SetRenderDrawColor(r->renderer, 0xFF * board->cells[i], 0, 0, 0);
