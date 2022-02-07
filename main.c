@@ -64,8 +64,9 @@ void usage() {
 
 int main(int argc, char* argv[]) {
 
-    char* options = "hn:";
+    char* options = "hn:g";
     int option;
+    bool draw_grid = false;
     while((option = getopt(argc, argv, options)) != -1) {
         switch(option) {
         case 'h':
@@ -74,6 +75,9 @@ int main(int argc, char* argv[]) {
         case '?':
             printf("Unknown option: %c\n", option);
             return 1;
+        case 'g':
+            draw_grid = true;
+            break;
         }
     }
 
@@ -127,7 +131,6 @@ int main(int argc, char* argv[]) {
 
     bool quit = false;
     bool paused = false;
-    bool draw_grid = true;
     while (!quit) {
 
         double duration =  (double) (stop - start) / CLOCKS_PER_SEC;
