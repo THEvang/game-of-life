@@ -240,6 +240,7 @@ int main(int argc, char* argv[]) {
         stop = clock();
     }
 
+    free(squares);
     SDL_DestroyWindow(renderer->window);
     SDL_Quit();
 
