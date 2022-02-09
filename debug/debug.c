@@ -5,17 +5,20 @@
 
 MemoryInfo g_debug_info = {.allocations = 0, .deallocations = 0};
 
-void *dbg_malloc(size_t n, const char* filename, int line, const char* function_name) {
+const char* format_string = "%-15s\t%-20s\t%5d\t%-p\n";
 
-    printf("%-20s\t%-5d\t%-ld\t%s\n",  __FILE__, __LINE__, n, function_name); 
+void *dbg_malloc(size_t n, const char* filename, const char* function_name, int line) {
+
+    void* ptr = malloc(n);
+    printf(format_string, filename, function_name, line, ptr); 
     g_debug_info.allocations++;
 
-    return malloc(n); 
+    return  ptr;
 }
 
-void dbg_free(void* obj, const char* filename, int line, const char* function_name) {
+void dbg_free(void* obj, const char* filename, const char* function_name, int line) {
     
-    printf("%-20s\t%-5d\t%-p\t%s\n", __FILE__, __LINE__, obj, function_name); 
+    printf(format_string, filename, function_name, line, obj); 
     free(obj); 
     g_debug_info.deallocations++; 
 }

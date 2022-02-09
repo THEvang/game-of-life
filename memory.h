@@ -6,8 +6,8 @@
 
     #include "debug/debug.h"
 
-    #define free(obj) dbg_free(obj, __FILE__, __LINE__); 
-    #define malloc(n) dbg_malloc(n, __FILE__, __LINE__);
+    #define free(obj) dbg_free(obj, __FILE__, __func__, __LINE__); 
+    #define malloc(n) dbg_malloc(n, __FILE__, __func__, __LINE__);
     #define PRINT_DEBUG_INFO() dbg_info();
 
 #else
