@@ -107,3 +107,19 @@ void gol_load_from_file(Board* board, const char* filename) {
     fclose(f);
     free(buffer);
 }
+
+int gol_to_array_index(Board *b, int x, int y) {
+    return x + y * b->columns;
+}
+
+void gol_activate_cell(Board* b, int x, int y) {
+    b->cells[gol_to_array_index(b, x, y)] = 1;
+}
+
+void gol_kill_cell(Board* b, int x, int y) {
+    b->cells[gol_to_array_index(b, x, y)] = 0;
+}
+
+bool gol_is_cell_alive(Board* b, int x, int y) {
+    return b->cells[gol_to_array_index(b, x, y)];
+}

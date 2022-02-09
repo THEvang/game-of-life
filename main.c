@@ -138,9 +138,9 @@ int main(int argc, char* argv[]) {
     Board* back_board = gol_init_board(rows, columns);
     Board* front_board = gol_init_board(rows, columns);
 
-    back_board->cells[1 + columns] = 1;
-    back_board->cells[1 + 2 * columns] = 1;
-    back_board->cells[1 + 3 * columns] = 1;
+    gol_activate_cell(back_board, 1, 1);
+    gol_activate_cell(back_board, 1, 2);
+    gol_activate_cell(back_board, 1, 3);
 
     clock_t start = clock();
     clock_t stop = clock();
@@ -168,8 +168,8 @@ int main(int argc, char* argv[]) {
                             if(event.button.button == SDL_BUTTON_LEFT) {
                                 SquareIndex index = to_square_index(event.button.x, event.button.y, square_size, &camera);
                                 if (index.x < back_board->columns && index.y < back_board->rows) {
-                                    back_board->cells[index.x + index.y * columns] = 1;
-                                    front_board->cells[index.x + index.y * columns] = 1;
+                                    gol_activate_cell(back_board, index.x, index.y);
+                                    gol_activate_cell(front_board, index.x, index.y);
                                 }
                                 printf("%d, %d\n", index.x, index.y);
                                 printf("%d, %d\n", event.button.x, event.button.y);
@@ -178,8 +178,8 @@ int main(int argc, char* argv[]) {
                             if(event.button.button == SDL_BUTTON_RIGHT) {
                                 SquareIndex index = to_square_index(event.button.x, event.button.y, square_size, &camera);
                                 if (index.x < back_board->columns && index.y < back_board->rows) {
-                                    back_board->cells[index.x + index.y * columns] = 0;
-                                    front_board->cells[index.x + index.y * columns] = 0;
+                                    gol_kill_cell(back_board, index.x, index.y);
+                                    gol_kill_cell(front_board, index.x, index.y);
                                 }
                             }
                             break;

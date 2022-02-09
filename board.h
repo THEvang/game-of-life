@@ -1,5 +1,7 @@
 #pragma once
 
+#include <stdbool.h>
+
 typedef struct Board {
     int rows;
     int columns;
@@ -8,6 +10,9 @@ typedef struct Board {
 
 Board* gol_init_board(int rows, int columns);
 void gol_destroy_board(Board* b);
+bool gol_is_cell_alive(Board* b, int x, int y);
+void gol_activate_cell(Board* b, int x, int y);
+void gol_kill_cell(Board* b, int x, int y);
 
 void gol_tick_board(Board *new_board, Board *old_board);
 
