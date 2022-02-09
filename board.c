@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include "board.h"
+#include "memory.h"
 
 Board* gol_init_board(int rows, int columns) {
 

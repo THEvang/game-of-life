@@ -4,6 +4,7 @@
 #include <time.h>
 #include <unistd.h>
 #include "board.h"
+#include "memory.h"
 
 #define WINDOW_WIDTH 1080
 #define WINDOW_HEIGHT 720
@@ -246,6 +247,7 @@ int main(int argc, char* argv[]) {
     gol_destroy_board(front_board);
     gol_destroy_board(back_board);
 
+    PRINT_DEBUG_INFO();
     return 0;
 }
 
